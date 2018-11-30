@@ -120,6 +120,8 @@ func (m *Meta) handler(context *gin.Context) {
 			"application/octet-stream",
 			x,
 		)
+	case ackErrorType:
+
 	default:
 
 		if types.Kind(x) == R.Slice {

@@ -4,8 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
+	WS "github.com/gorilla/websocket"
+
 	"github.com/gin-gonic/gin"
 	"github.com/mz-eco/types"
+)
+
+var (
+	grader = WS.Upgrader{}
 )
 
 type contextGetter interface {
@@ -17,14 +23,22 @@ type Context struct {
 	ack interface{}
 }
 
+func (m *Context) Socket() (*WS.Conn, error) {
+	return grader.Upgrade(m.ctx.Writer, m.ctx.Request, nil)
+}
+
+type ackErrorType struct {
+}
+
+var (
+	ackError = ackErrorType{}
+)
+
 var (
 	TypeContext = types.ElemType((*Context)(nil))
 )
 
 func (m *Context) Error(code int, err error) {
-
-	fmt.Println(err.Error())
-
 	m.ctx.JSON(
 		http.StatusOK,
 		map[string]interface{}{
@@ -32,6 +46,8 @@ func (m *Context) Error(code int, err error) {
 			"Message": errorMessage(code),
 		},
 	)
+
+	m.ack = ackError
 }
 
 func (m *Context) Message(format string, v ...interface{}) {
@@ -43,6 +59,8 @@ func (m *Context) Message(format string, v ...interface{}) {
 			"Message": fmt.Sprintf(format, v...),
 		},
 	)
+
+	m.ack = ackError
 }
 
 func (m *Context) Done(v interface{}) {
