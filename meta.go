@@ -94,12 +94,24 @@ func (m *Meta) handler(context *gin.Context) {
 
 		x := R.Indirect(in).FieldByName(metaFields[index])
 
-		err := metaBinding[index].Bind(R.Indirect(x).Addr().Interface(), context)
+		if types.Kind(x) == R.Ptr {
+			middle := types.New(x.Type())
+			err := metaBinding[index].Bind(middle.Elem().Addr().Interface(), context)
 
-		if err != nil {
-			ctx.Error(ErrBinding, errors.Wrapf(err, "binding %s fail.", metaFields[index]))
-			return
+			if err != nil {
+				ctx.Error(ErrBinding, errors.Wrapf(err, "binding %s fail.", metaFields[index]))
+				return
+			}
+			x.Set(middle.Elem())
+		} else {
+			err := metaBinding[index].Bind(R.Indirect(x).Addr().Interface(), context)
+
+			if err != nil {
+				ctx.Error(ErrBinding, errors.Wrapf(err, "binding %s fail.", metaFields[index]))
+				return
+			}
 		}
+
 	}
 
 	m.fn.Call([]R.Value{in})
