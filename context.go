@@ -11,7 +11,11 @@ import (
 )
 
 var (
-	grader = WS.Upgrader{}
+	grader = WS.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
 )
 
 type contextGetter interface {
